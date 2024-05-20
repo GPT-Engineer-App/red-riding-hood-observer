@@ -1,0 +1,105 @@
+#include <iostream>
+#include <vector>
+#include <string>
+
+// Интерфейс наблюдателя
+class Observer {
+public:
+    virtual void update(const std::string &message_from_subject) = 0;
+};
+
+// Интерфейс субъекта
+class Subject {
+public:
+    virtual void attach(Observer *observer) = 0;
+    virtual void detach(Observer *observer) = 0;
+    virtual void notify() = 0;
+};
+
+// Конкретный субъект
+class LittleRedRidingHood : public Subject {
+private:
+    std::vector<Observer *> list_observer_;
+    std::string message_;
+public:
+    void attach(Observer *observer) override {
+        list_observer_.push_back(observer);
+    }
+
+    void detach(Observer *observer) override {
+        list_observer_.erase(std::remove(list_observer_.begin(), list_observer_.end(), observer), list_observer_.end());
+    }
+
+    void notify() override {
+        for (Observer *observer : list_observer_) {
+            observer->update(message_);
+        }
+    }
+
+    void createMessage(const std::string &message = "Empty") {
+        this->message_ = message;
+        notify();
+    }
+};
+
+// Конкретный наблюдатель
+class Grandma : public Observer {
+private:
+    std::string message_from_subject_;
+    LittleRedRidingHood &subject_;
+public:
+    Grandma(LittleRedRidingHood &subject) : subject_(subject) {
+        this->subject_.attach(this);
+    }
+
+    virtual ~Grandma() {
+        subject_.detach(this);
+    }
+
+    void update(const std::string &message_from_subject) override {
+        message_from_subject_ = message_from_subject;
+        printInfo();
+    }
+
+    void printInfo() {
+        std::cout << "Бабушка получила сообщение: " << message_from_subject_ << "\n";
+    }
+};
+
+class Wolf : public Observer {
+private:
+    std::string message_from_subject_;
+    LittleRedRidingHood &subject_;
+public:
+    Wolf(LittleRedRidingHood &subject) : subject_(subject) {
+        this->subject_.attach(this);
+    }
+
+    virtual ~Wolf() {
+        subject_.detach(this);
+    }
+
+    void update(const std::string &message_from_subject) override {
+        message_from_subject_ = message_from_subject;
+        printInfo();
+    }
+
+    void printInfo() {
+        std::cout << "Волк получил сообщение: " << message_from_subject_ << "\n";
+    }
+};
+
+int main() {
+    LittleRedRidingHood *subject = new LittleRedRidingHood;
+    Grandma *observer1 = new Grandma(*subject);
+    Wolf *observer2 = new Wolf(*subject);
+
+    subject->createMessage("Красная Шапочка идет к бабушке");
+    subject->createMessage("Красная Шапочка встретила волка");
+
+    delete observer2;
+    delete observer1;
+    delete subject;
+
+    return 0;
+}
